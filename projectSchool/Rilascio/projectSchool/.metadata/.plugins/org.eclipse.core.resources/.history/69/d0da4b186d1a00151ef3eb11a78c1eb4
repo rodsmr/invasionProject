@@ -1,0 +1,432 @@
+package partita;
+
+import interfacceComunicazione.Client;
+
+import java.io.IOException;
+import java.net.Socket;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.Statement;
+import java.util.*;
+
+import comunicazione.GestioneDatabase;
+import prepartita.Prepartita;
+import login.TaskGestioneComandi;
+
+public class PartitaTre implements Runnable {	//devo settare i punteggi dei vincitori e il numero di giocatori e il numero di armate
+
+	private GestioneDatabase gestDatabase = null;
+	private ArrayList<Giocatore> classifica = null;
+	private int numGiocatori = 0;
+	private int punteggio1 = 16;
+	private int punteggio2 = 4;
+	private ArrayList<Giocatore> giocatori = null;
+	private static String[] colori = new String[6];
+	private Integer armateGioc = 0;
+	private Object lock = null;
+	private Client clientInt = null;
+	public static String[] posizioneTotale = null;
+	public static int contatore = 0;
+	private Mappa map = null;
+	
+	public PartitaTre(int punteggio1,int punteggio,int numGiocatori, int armateGioc){
+		this.punteggio1 = punteggio1;
+		this.punteggio2 = punteggio2;
+		this.numGiocatori = numGiocatori;
+		this.armateGioc = armateGioc;
+	}
+	
+	public ArrayList<Giocatore> istance(){
+		classifica = new ArrayList<Giocatore>();
+		lock = new Object();
+		if(giocatori == null)
+			giocatori = new ArrayList<Giocatore>();
+		return giocatori;
+	}
+
+	private void setColori(){
+		colori[0] = "azzurro";
+		colori[1] = "verde";
+		colori[2] = "giallo";
+		colori[3] = "bianco";
+		colori[4] = "magenta";
+		colori[5] = "arancio";
+	}
+
+	@Override
+	public void run() {
+		map = new Mappa();
+		Giocatore user = null;
+		map.creaMappa();
+		ArrayList<Territorio> lista = map.getLista();
+		String result = null;
+		gestDatabase = new GestioneDatabase();
+		int turnoPartita = 0;
+		int ricaricaPedine = 0;
+		
+		if(inserisciGiocatori()){
+			Iterator<Giocatore> it = giocatori.iterator();
+
+			assegnaColore();
+			System.out.println("Sono in run pre assegnaTerritori");
+			result = assegnaTerritori(lista);
+			System.out.println("VALORE DI ASSEGNATERRITORI IN PARTITA3: "+result);
+			//fino a qui RMI buono
+			if (posizionaArmate().equals("true")) {
+				try {
+					while(contatore != 3){
+						System.out.println("VALORE CONTATORE: "+contatore);
+						Thread.sleep(5000);
+					}
+					visualizzaTerritori();
+					contatore = 0;
+					aggiorna();
+					while(contatore != 3){
+						Thread.sleep(5000);
+					}
+					//fino a qua RMI buono
+					
+					//INIZIA PARTITA VERA E PROPRIA
+					int turno = 1;
+					it = giocatori.iterator();
+					user = it.next();
+					while(giocatori.size()>1){
+						if(turno>1){
+							it = giocatori.iterator();
+							ricaricaPedine = ricarica();
+							//poi si invia ricarica@ricaricaPedine;
+							//lato Client non è ancora gestita
+						}
+						while(it.hasNext()){
+							System.out.println("TURNO DI: "+user.getUser());
+							result = user.turno();
+							user.setAzioneComando(result);
+							result = user.eseguiComandi(null,this);
+							if(result.equals("fine")){
+								System.out.println("FINE TURNO GIOCATORE "+user.getUser());
+								user = it.next();
+								System.out.println("ARRIVA");
+							}
+							else{
+								contatore = 0;
+								//if(turnoPartita!=0)
+									//aggiornaPosizionetotale();
+								aggiorna();
+								turnoPartita++;
+								while(contatore != 3){
+									System.out.println("CONTATORE: "+contatore);
+									Thread.sleep(2000);
+								}
+								if(result.equals("sposta")){
+									user = it.next();
+								}
+							}
+						}
+						turno++;
+					}
+					classifica.add(giocatori.get(0));
+					gestDatabase.start();
+					Connection connessione = gestDatabase.getConnessione();
+					Statement statement = connessione.createStatement();
+					String query = "INSERT INTO partita(num_giocatori,primo,secondo,data) VALUES("+numGiocatori+",'"+classifica.get(2)+"','"+classifica.get(1)+"',CURRENT_TIMESTAMP)";
+					ResultSet risultato = null;
+					risultato = statement.executeQuery(query);		
+					risultato.close();
+					gestDatabase.chiudiRisorse();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+				e.printStackTrace();
+				}
+			}
+		}
+	}	
+	
+	
+	/*private void aggiornaPosizionetotale() {
+		Iterator<Giocatore> giocatore = giocatori.iterator();
+		Giocatore user = null;
+		Iterator<Territorio> terr = map.getLista().iterator();
+		int i = 0;
+		
+		while(terr.hasNext()){
+			posizioneTotale[i] = terr.next().getNumArmate().toString();
+			i++;
+		}
+		
+	}*/
+
+	private String aggiorna() {
+		
+		Iterator<Giocatore> giocatore = giocatori.iterator();
+		Socket client = null;
+		Giocatore user = null;
+		
+		while(giocatore.hasNext()){
+			user = giocatore.next(); //prendo il giocatore
+			client = user.getSocket();		//prendo il socket del giocatore per inviarlo a taskposizionaarmate
+			//SOCKET
+			if(client != null){
+				TaskAggiorna aggiornamento = new TaskAggiorna(client, this);
+				Thread thread = new Thread(aggiornamento);
+				thread.start();		
+			}
+			if(client == null){
+				//AGGIORNAMENTO CON RMI
+				clientInt = user.getClientInt();
+				TaskAggiorna taskAggiorna = new TaskAggiorna(clientInt, this);
+				Thread thread = new Thread(taskAggiorna);
+				thread.start();
+			}							
+		}
+		return "true";
+	}
+
+	public ArrayList<Giocatore> getGiocatore(){
+		return this.giocatori;
+	}
+	
+	@Override
+	public void assegnaArmate() {
+		Iterator<Giocatore> it = giocatori.iterator();
+		Giocatore user = null;
+		
+		while(it.hasNext()){
+			user = it.next();
+			user.setArmate(armateGioc);
+			System.out.println("Numero armate dopo setArmate: "+user.getArmate());
+		}	
+	}
+	
+	@Override
+	public String posizionaArmate() {
+		Iterator<Giocatore> it = giocatori.iterator(); //per scorrere i giocatori
+		Giocatore user = null;
+		Socket client = null;
+		
+		assegnaArmate();
+		System.out.println("Arriva fino a dopo assegnaArmate in posizionaArmate");
+		posizioneTotale = new String[42];
+		while(it.hasNext()){
+			user = it.next(); //prendo il giocatore
+			client = user.getSocket();		//prendo il socket del giocatore per inviarlo a taskposizionaarmate
+			//SOCKET
+			if(client != null){
+				TaskPosizionaArmate taskPosizione = new TaskPosizionaArmate(user,this);
+				Thread thread = new Thread(taskPosizione);
+				thread.start();				
+			}
+			//RMI
+			else{
+				clientInt = user.getClientInt();
+				TaskPosizionaArmate taskPosizione = new TaskPosizionaArmate(clientInt,user);
+				Thread thread = new Thread(taskPosizione);
+				thread.start();
+			}
+		}
+		return "true";
+	}
+
+	public String assegnaTerritori(ArrayList<Territorio> lista) {
+		System.out.println("Sono in assegnaTerritori");
+
+		Random ran = new Random();
+		Integer[] territori = new Integer[42];
+		Integer numTerritorio = null;
+		int flag = 0;
+		int i = 0;
+		int j = 0;
+		Territorio supporto = null;
+
+		
+		
+		Iterator<Giocatore> it = giocatori.iterator();
+		Giocatore user = null;
+		
+		System.out.println("Sono nell'assegnamento dei territori");
+
+		while(i < 42){
+			numTerritorio = ran.nextInt(42)+1;
+			while(j < i && flag == 0){
+				if(numTerritorio == territori[j]){
+					flag=1;
+				}
+				j++;
+			}
+			if(flag==0){
+				territori[i]=numTerritorio;
+				i++;
+			}
+			flag=0;
+			j=0;
+		}
+		
+		int trovato = 0;
+		
+		for(i = 0; i < territori.length; i++){
+			trovato = 0;
+			if(i == 0 || i == 14 || i == 28){
+				user = it.next();
+			}	
+			Iterator<Territorio> terr = lista.iterator();
+			while(terr.hasNext() && trovato==0){
+				supporto = terr.next();
+				System.out.println("Valore di Codice di supporto in AssegnaTerritori: "+supporto.getCodice());
+				System.out.println("Valore di territori[i]: "+territori[i].toString());
+				if(supporto.getCodice().equals(territori[i].toString())){
+					user.setTerritori(supporto);
+					supporto.setNewUser(user.getUser(), 0);
+					trovato = 1;
+				}
+			}			
+		}
+		String esitoTerritori = null;
+		Iterator<Giocatore> iter = giocatori.iterator();
+		while(iter.hasNext()){
+			user = iter.next();	
+			if (user.inviaTerritori().equals("true")) {
+				System.out.println("TERRITORI OK per "+user.getUser());
+				esitoTerritori = "true";
+			}
+			else {
+				esitoTerritori = "false";
+			}
+		}
+		return esitoTerritori;
+	}
+
+	@Override
+	public void assegnaColore() {
+		//ipotesi: if (colori == null)
+		setColori();
+		Giocatore user = null;
+		giocatori = istance3();
+		
+		Iterator<Giocatore> it = giocatori.iterator();
+		while(it.hasNext()){
+			user = it.next();
+			user.setAzioneComando("colore");
+			try {
+				user.eseguiComandi(colori,this);
+				//user.setAzioneComando("avvia");
+				//user.eseguiComandi(null);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private boolean inserisciGiocatori(){
+		Giocatore user = null;
+		giocatori = istance3();
+		Iterator<Giocatore> it = new Prepartita().listaUtenti3.iterator();
+		Iterator<Giocatore> ite = null;
+		Prepartita prePart = new Prepartita();
+		int trovato = 0;
+		Giocatore temp = null;
+		int i = 0;
+		int j = 0;
+		int[] daRimuovere = new int[3];
+		boolean rimozione = true;
+		boolean aggiunto = true;
+		
+		for(i = 0; i < 3; i++){
+			user = it.next();
+			if(!giocatori.add(user))
+				aggiunto = false;
+		}
+		
+		it = new Prepartita().listaUtenti3.iterator();
+		System.out.println("PRIMA");
+		while(it.hasNext()){
+			System.out.println(it.next().getUser());
+		}
+		synchronized(lock){
+			for (i = 1; i < 4; i++){
+				new Prepartita().listaUtenti3.remove(0);
+			}
+		}
+		it = new Prepartita().listaUtenti3.iterator();
+		System.out.println("DOPO");
+		while(it.hasNext()){
+			System.out.println(it.next().getUser());
+		}
+		return (rimozione&&aggiunto);
+	}
+	
+	
+	private void visualizzaTerritori(){
+		String user = null;
+		int i = 0;
+		for(i = 0;i < posizioneTotale.length; i++){
+			System.out.println("TERRITORIO: "+(i+1)+"\t ARMATE: "+posizioneTotale[i]);
+		}
+	}
+
+	public Object getObject() {
+		return this.lock;
+		}
+
+	public String[] getPosizioneTotale() {
+		return this.posizioneTotale;
+	}
+
+	public int getContatore() {
+		return this.contatore;
+	}
+
+	public void setContatore(int contatore) {
+		this.contatore = contatore;
+	}
+	
+	public ArrayList<Giocatore> getClassifica(){
+		return this.classifica;
+	}
+	
+	private int ricarica(){
+		
+		Giocatore supGioc = null;
+		Iterator<Giocatore> itGioc = giocatori.iterator();
+		int sAmerica = 4;
+		int nAmerica = 9;
+		int europa = 7;
+		int asia = 12;
+		int oceania = 4;
+		int africa = 6;
+		int bonus = 0;
+		Iterator<Territorio> itTerr = null;
+		Territorio supTerr = null;
+		
+		while(itGioc.hasNext()){
+			supGioc = itGioc.next();
+			sAmerica = 4;
+			nAmerica = 9;
+			europa = 7;
+			asia = 12;
+			oceania = 4;
+			africa = 6;
+			bonus = 0;
+			itTerr = supGioc.getLista().iterator();
+			while(itTerr.hasNext()){
+				supTerr = itTerr.next();
+				if(supTerr.getContinente().equals("1")) nAmerica--;
+				if(supTerr.getContinente().equals("2")) sAmerica--;
+				if(supTerr.getContinente().equals("3")) europa--;
+				if(supTerr.getContinente().equals("4"))	asia--;	
+				if(supTerr.getContinente().equals("5")) oceania--;
+				if(supTerr.getContinente().equals("6")) africa--;
+			}
+			if(nAmerica==0) bonus++;
+			if(sAmerica==0) bonus++;
+			if(europa==0) bonus++;
+			if(asia==0) bonus++;
+			if(oceania==0) bonus++;
+			if(africa==0) bonus++;
+			
+			bonus = bonus*5;
+			bonus += Math.ceil(supGioc.getLista().size()/3);
+		}
+	return bonus;
+	}
+}
+

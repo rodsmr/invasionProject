@@ -1,0 +1,61 @@
+package partita;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+
+public class TaskAggiorna implements Runnable {
+
+	private Socket client = null;
+	private PartitaTre partita3 = null;
+	
+	public TaskAggiorna(Socket client, PartitaTre partita){
+		this.client = client;
+		this.partita3 = partita;
+	}
+	
+	@Override
+	public void run() {
+		PrintWriter writer = null;
+		String[] daInviare = null;
+		String aggiornamento = "aggiorna@";
+		BufferedReader reader = null;
+		String result = null;
+		Object lock = null;
+		int contatore = 0;
+		boolean attesa = false;
+		//SOCKET
+		if(client!=null){
+			try {
+				reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+				writer = new PrintWriter(client.getOutputStream(),true);
+				daInviare = partita3.getPosizioneTotale();
+				for(int i = 0; i < daInviare.length; i++){
+					aggiornamento+=daInviare[i] + ";";
+				}
+				System.out.println("STRINGA DA INVIARE: "+aggiornamento);
+				writer.println(aggiornamento);
+				writer.flush();
+				//mi metto in attesa di una risposta da un client
+				System.out.println("AGGIORNA attesa di risposta dal client ");
+				result = reader.readLine();
+				System.out.println("-->TASK AGGIORNA: "+result);
+				if(result.equals("aggiorna@true")){
+					System.out.println("RICEVUTO COMANDO TRUE PER AGGIORNAMENTO");
+					lock = partita3.getObject();
+					synchronized(lock){
+						contatore = partita3.getContatore();
+						contatore++;
+						partita3.setContatore(contatore);					
+					}
+				}
+				else System.out.println("Errore in ricezione aggiornamento");			
+			} catch (IOException e) {
+			e.printStackTrace();
+			}
+		}
+		//RMI
+	}
+}

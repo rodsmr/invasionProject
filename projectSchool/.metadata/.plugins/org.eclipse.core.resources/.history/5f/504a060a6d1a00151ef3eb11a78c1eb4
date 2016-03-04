@@ -1,0 +1,170 @@
+package prepartita;
+
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.Iterator;
+
+import partita.Giocatore;
+import partita.PartitaTre;
+
+import comunicazione.StartServerAcceptRMI;
+import interfacceComunicazione.Client;
+import interfacceComunicazione.Partita;
+import interfacceComunicazione.Server;
+
+public class ServerImpl extends UnicastRemoteObject implements Server, Runnable {
+
+	private static final long serialVersionUID = 1L;
+	private String user = null;
+	private Client client = null;
+	private StartServerAcceptRMI server = null;
+	private Thread serverThread = null;	
+	private Prepartita prePart = null;
+//	private Partita partita = null; 
+
+	
+	public ServerImpl(String user, Client client, StartServerAcceptRMI server) throws RemoteException {
+		this.user = user;
+		this.client = client;
+		this.server = server;
+		this.prePart = new Prepartita();
+		/*if(prePart.getPartita3()!=null) this.partita = prePart.getPartita3();
+		if(prePart.getPartita4()!=null) this.partita = prePart.getPartita4();
+		if(prePart.getPartita5()!=null) this.partita = prePart.getPartita5();
+		if(prePart.getPartita6()!=null) this.partita = prePart.getPartita6();*/
+		
+//		new Giocatore(user, client);
+	}
+	
+	public void setServerThread(Thread serverThread) {
+		this.serverThread = serverThread;
+	}
+	
+	@Override
+	//se faccio il login creo il giocatore e gli passo l'username
+	//ed il client per poter fare correttamnete la callback;
+	public void run() {
+	}
+
+	@Override
+	public String rimuoviInLista(String username, String numeroGiocatori, String metodo) throws RemoteException {
+		
+		String result = "false";
+		
+		result = prePart.rimuoviInLista(username, numeroGiocatori, null);
+		return result;
+	}
+	
+	@Override
+	public String inserimentoListaPrepartita(String username, String numeroGiocatori, String metodo) throws RemoteException {
+		
+		String result = "false";
+		
+		result = prePart.aggiungiInLista(username, numeroGiocatori, null, client);
+		return result;
+		/*
+		nodo[0] = username;
+		nodo[1] = numeroGiocatori;
+		nodo[2] = metodo;
+		
+		switch(numeroGiocatori){
+		case "3": {
+			prePart.instance3();
+			System.out.println("Sono dentro Aggiungilistapartita di server Impl 3");
+			synchronized(prePart.lock3){
+				Prepartita.listaUtenti3.add(nodo);
+				System.out.println("Numero utenti in lista: "+Prepartita.listaUtenti3.size());
+				Iterator<String[]> it = Prepartita.listaUtenti3.iterator();
+				while(it.hasNext()){
+					System.out.println("Valori listaUtenti3: ");
+					System.out.println(it.next()[0]);
+				}
+				result = true;
+				if((Prepartita.listaUtenti3.size()%3)==0){
+					numeroPartite = Prepartita.listaUtenti3.size()/3;
+					for(int i = 0; i < numeroPartite; i++){
+						System.out.println("Avvia Partita da 3");
+					}
+				}	
+			}			
+			break;
+		}
+		case "4": {
+			prePart.instance4();
+			System.out.println("Sono dentro Aggiungilistapartita di server Impl 4");
+			synchronized(prePart.lock4){
+				Prepartita.listaUtenti4.add(nodo);
+				System.out.println("Numero utenti in lista: "+Prepartita.listaUtenti4.size());
+				Iterator<String[]> it = Prepartita.listaUtenti4.iterator();
+				System.out.println("Valori listaUtenti4: ");
+				while(it.hasNext()){
+					System.out.println(it.next()[0]);
+				}
+				result = true;
+				if((Prepartita.listaUtenti4.size()%4)==0){
+					numeroPartite = Prepartita.listaUtenti4.size()/4;
+					for(int i = 0; i < numeroPartite; i++){
+						System.out.println("Avvia Partita da 4");
+					}
+				}	
+			}		
+			break;
+		}
+		case "5": {
+			prePart.instance5();
+			System.out.println("Sono dentro Aggiungilistapartita di server Impl 5");
+			synchronized(prePart.lock5){
+				Prepartita.listaUtenti5.add(nodo);
+				System.out.println("Numero utenti in lista: "+Prepartita.listaUtenti5.size());
+				Iterator<String[]> it = Prepartita.listaUtenti5.iterator();
+				System.out.println("Valori listaUtenti5: ");
+				while(it.hasNext()){
+					System.out.println(it.next()[0]);
+				}
+				result = true;
+				if((Prepartita.listaUtenti5.size()%5)==0){
+					numeroPartite = Prepartita.listaUtenti5.size()/5;
+					for(int i = 0; i < numeroPartite; i++){
+						System.out.println("Avvia Partita da 5");
+					}
+				}	
+			}		
+			break;
+		}
+		case "6": {
+			prePart.instance6();
+			System.out.println("Sono dentro Aggiungilistapartita di server Impl 6");
+			synchronized(prePart.lock6){
+				Prepartita.listaUtenti6.add(nodo);
+				System.out.println("Numero utenti in lista: "+Prepartita.listaUtenti6.size());
+				Iterator<String[]> it = Prepartita.listaUtenti6.iterator();
+				System.out.println("Valori listaUtenti6: ");
+				while(it.hasNext()){
+					System.out.println(it.next()[0]);
+				}
+				result = true;
+				if((Prepartita.listaUtenti6.size()%6)==0){
+					numeroPartite = Prepartita.listaUtenti6.size()/6;
+					for(int i = 0; i < numeroPartite; i++){
+						System.out.println("Avvia Partita da 6");
+					}
+				}	
+			}			
+		}
+		break;
+	}
+	return result;*/
+	}
+
+	@Override
+	public void assegnaColoreServerImpl() throws RemoteException {
+		// TODO Auto-generated method stub
+		
+	}
+
+	/*@Override
+	public Partita eseguiComandi(String comandoDaEseguire)
+			throws RemoteException {
+		return this.partita;
+	}*/
+}

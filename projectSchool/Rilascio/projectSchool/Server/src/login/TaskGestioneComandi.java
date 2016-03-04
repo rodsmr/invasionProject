@@ -1,0 +1,121 @@
+package login;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+
+import analisiComandi.AnalisiLogin;
+import prepartita.ServerTaskPrepartita;
+
+/**
+ * Classe per la gestione dei comandi.
+ */
+public class TaskGestioneComandi implements Runnable{
+	
+	private Socket clientSocket = null;
+	private static String username = null;
+	
+	public TaskGestioneComandi(Socket clientSocket){
+		this.clientSocket = clientSocket;
+	}
+	
+	/**
+	 * 
+	 * @param Comando che il metodo dovrà elaborare in quanto è presente il separatore @
+	 * @return ritorna il comando senza separatore
+	 */
+	
+	private static String recuperaComando(String daElaborare) {
+			
+		String comando = "";
+		int i = 0;
+		
+		System.out.println("comando LETTO daElaborare: "+daElaborare);
+		int firstSeparator = daElaborare.indexOf('@');
+		
+		for (i = 0; i < firstSeparator; i++) {
+			comando += daElaborare.charAt(i);
+		}
+		System.out.println("comando elaborato: "+comando);
+		return comando;
+	}
+	
+	private void setUser(String user){
+		TaskGestioneComandi.username = user;
+	}
+	private String getUser(){
+		return username;
+	}
+	
+	@Override
+	public void run() {
+		
+		Thread thread = null;
+		
+		ServerTaskVerifica taskVerifica = null;
+		ServerTaskRegistra taskRegistra = null;
+		ServerTaskLogin taskLogin = null;
+		ServerTaskLogout taskLogout = null;
+		ServerTaskPrepartita taskPrepartita = null;
+		
+		BufferedReader reader = null;
+		PrintWriter writer = null;
+		String comando = null;
+		String letteraComando = null;
+		String copyComando = null;
+		
+		try{
+			reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+			writer = new PrintWriter(clientSocket.getOutputStream(),true);
+			comando = reader.readLine();
+			if (comando.equals("logout")) {
+				letteraComando = "logout";
+			}
+			else if (comando.substring(0, 11).equals("prepartitaA")) {
+				letteraComando = "prepartita";
+			}
+			else {
+				letteraComando = recuperaComando(comando);
+			}
+			System.out.println("2 Recupero comando: "+letteraComando);
+			System.out.println(" Recupero comando: "+comando);
+			switch (letteraComando) {
+				case "verifica": {
+					taskVerifica = new ServerTaskVerifica(clientSocket,comando);
+					taskVerifica.run();
+				} break;
+				case "registra": {
+					taskRegistra = new ServerTaskRegistra(clientSocket,comando);
+					taskRegistra.run();
+				} break;
+				case "login": {
+					taskLogin = new ServerTaskLogin(clientSocket,comando);
+					comando = comando.substring(6);
+					int posizioneSeparatore = new AnalisiLogin().posizioneSeparatore(comando);
+					String user = new AnalisiLogin().decodificaUser(comando, posizioneSeparatore);
+					setUser(user);
+					taskLogin.run();
+				} break;
+				case "logout": {
+					taskLogout = new ServerTaskLogout(clientSocket,comando,getUser());
+					taskLogout.run();
+				} break;
+				case "prepartita":{
+					System.out.println("Prima di passare: "+comando);
+					taskPrepartita = new ServerTaskPrepartita(clientSocket,comando);
+					taskPrepartita.run();
+				} break;
+				
+				//CASE SPOSTA
+				//CASE ATTACCA
+				//CASE PARTITA?
+			}				
+		}
+		catch(IOException e){
+			System.err.println("Errore nella lettura del comando nel thread gestione");
+			//bisogna decidere cosa fargli fare
+		}
+	}
+}

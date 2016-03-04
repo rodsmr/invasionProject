@@ -1,0 +1,324 @@
+package login;
+
+import interfacceComunicazione.ServerAccept;
+
+import javax.swing.*;
+
+import analisiComandi.AnalisiLogin;
+
+import java.awt.Color;
+import java.awt.event.*;
+import java.io.*;
+import java.net.*;
+import java.rmi.RemoteException;
+
+public class FinestraRegistrazione  {
+	
+	private ClientImpl client = null;
+	
+	private GestioneFinestre gestioneFinestre = null;
+	
+	private JFrame finestraRegistrazione = null;
+	private String tipoComunicazione = null;
+
+	protected JTextField visualizzaTipoComunicazione = null;
+	private JTextField inserisciUser = null;
+	private JTextField inserisciPW = null;
+	
+	private JLabel user = null;
+	private JLabel pw = null;
+	private JLabel userEsistente = null;
+
+	private JButton convalidaUser = null;
+	private JButton registrati = null;
+	
+	private static final int PORT = 4500;
+	private static final String HOST = "127.0.0.1";	
+	
+	public FinestraRegistrazione() {
+		
+		try {
+			this.client = new ClientImpl();
+			this.client.start();
+		} catch (RemoteException e) {
+			System.out.println("-->Creazione fallita Client REGISTRAZIONE");
+			//Bisogna decidere cosa fare qua
+		}
+		
+		this.gestioneFinestre = new GestioneFinestre();
+
+		this.setFinestraRegistrazione();		
+		this.setVisualizzaTipoComunicazione();
+		this.setUserPW();
+		this.setInserisciUserPW();
+		this.setConvalidaUser();
+		this.setRegistrati();
+		
+		this.finestraRegistrazione.getContentPane().add(this.visualizzaTipoComunicazione);
+		this.finestraRegistrazione.getContentPane().add(this.user);
+		this.finestraRegistrazione.getContentPane().add(this.pw);
+		this.finestraRegistrazione.getContentPane().add(this.userEsistente);
+		this.finestraRegistrazione.getContentPane().add(this.inserisciUser);
+		this.finestraRegistrazione.getContentPane().add(this.inserisciPW);
+		this.finestraRegistrazione.getContentPane().add(this.convalidaUser);
+		this.finestraRegistrazione.getContentPane().add(this.registrati);
+		
+		this.finestraRegistrazione.setVisible(false);
+	}
+	
+	private void setFinestraRegistrazione() {
+		
+		this.finestraRegistrazione = new JFrame("Registrazione Utente");
+		this.finestraRegistrazione.setBounds(350, 150, 600, 300);
+		this.finestraRegistrazione.setResizable(false);
+		this.finestraRegistrazione.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+		this.finestraRegistrazione.getContentPane().setLayout(null);
+		
+	}
+
+	private void setVisualizzaTipoComunicazione() {
+		
+		this.visualizzaTipoComunicazione = new JTextField("Tipo comunicazione: "+this.tipoComunicazione, 1);
+		this.visualizzaTipoComunicazione.setBounds(10, 10, 180, 30);
+		this.visualizzaTipoComunicazione.setEditable(false);
+		
+	}
+	
+	private void setUserPW() {
+
+		this.user = new JLabel("Username");
+		this.pw = new JLabel("Password");
+		this.userEsistente = new JLabel("Username non valido, riprova");
+		this.user.setBounds(10, 50, 70, 30);
+		this.pw.setBounds(10, 90, 70, 30);
+		this.userEsistente.setBounds(320, 50, 195, 30);
+		this.userEsistente.setForeground(Color.red);
+		this.userEsistente.setVisible(false);
+		
+	}
+	
+	private void setInserisciUserPW() {
+
+		this.inserisciUser = new JTextField(1);
+		this.inserisciPW = new JTextField(1);
+		this.inserisciUser.setBounds(90, 50, 90, 30);
+		this.inserisciPW.setBounds(90, 90, 90, 30);
+		this.inserisciPW.setEditable(false);
+	}
+	
+	private void setConvalidaUser() {
+		
+		this.convalidaUser = new JButton("Verifica");
+		this.convalidaUser.setBounds(200, 50, 100, 30);
+		this.convalidaUser.addActionListener(new AscoltatoreBottoneVerifica());
+	}
+	
+	private void setRegistrati() {
+		this.registrati = new JButton("Registrati");
+		this.registrati.setBounds(200, 90, 100, 30);
+		this.registrati.setEnabled(false);
+		this.registrati.addActionListener(new AscoltatoreBottoneRegistrati());
+	}
+	
+	public JFrame getFinestraRegistrazione() {
+		return this.finestraRegistrazione;
+	}
+	
+	class AscoltatoreBottoneVerifica implements ActionListener {
+		
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			//verifico il tipo di comunicazione ed eseguo il controllo
+			//sul database per la disponibilità dell'user
+			if(visualizzaTipoComunicazione.getText().equalsIgnoreCase("socket")){
+				System.out.println("SOCKET");
+				if (verificaUser().equalsIgnoreCase("true")) {
+					convalidaUser.setEnabled(true);
+					inserisciUser.setEditable(true);
+					userEsistente.setVisible(true);
+					inserisciPW.setEditable(false);
+					registrati.setEnabled(false);
+				}
+				else {
+					convalidaUser.setEnabled(false);
+					inserisciUser.setEditable(false);
+					userEsistente.setVisible(false);
+					inserisciPW.setEditable(true);
+					registrati.setEnabled(true);
+				}
+			}
+			else if(visualizzaTipoComunicazione.getText().equalsIgnoreCase("rmi")) {
+				//vanno impostati i bottoni correttamente come sopra
+				ServerAccept stub = client.getStub();
+				System.out.println("RMI");
+				try {
+					if (stub.verifica(inserisciUser.getText()).equalsIgnoreCase("true")) {
+						userEsistente.setVisible(true);
+						inserisciPW.setEditable(false);
+						registrati.setEnabled(false);
+						convalidaUser.setEnabled(true);
+						inserisciUser.setEditable(true);					
+					}
+					else {
+						convalidaUser.setEnabled(false);
+						inserisciUser.setEditable(false);
+						userEsistente.setVisible(false);
+						inserisciPW.setEditable(true);
+						registrati.setEnabled(true);					
+					}
+				} catch (RemoteException e) {
+					System.out.println("Client-->verifica non riuscita");
+					System.out.println("v NON: "+e.getMessage());
+					//bisogna decidere cosa fare
+				}
+			}
+		}
+		
+		public String verificaUser(){
+			
+			BufferedReader reader = null;
+			PrintWriter writer = null;
+			Socket clientSocket = null;
+			String nome = null;
+			String result = null;
+			String comando = null;
+			
+			AnalisiLogin analisiLogin = new AnalisiLogin();
+			
+			if (!inserisciUser.getText().equalsIgnoreCase("")) {
+				try{
+					clientSocket = new Socket(HOST, PORT);
+					reader = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+					writer = new PrintWriter(clientSocket.getOutputStream());
+					
+					nome = inserisciUser.getText();
+					nome = analisiLogin.inviaUser(nome);
+					//System.out.println("user inserito dall'utente: "+nome);
+					comando = "verifica@"+nome;
+					writer.println(comando);
+					writer.flush();
+					
+					result = reader.readLine();
+					//System.out.println("Risultato del socket: "+result);
+					
+					writer.close();
+					reader.close();
+					clientSocket.close();
+				} catch(IOException e){
+					System.err.println("Errore connessione socket client");
+					//bisogna decidere cosa fare
+					//credo basti assegnare un valore a result
+					//e poi chiudere tutti i canali di comunicazione
+				}
+				return result;
+			}
+			else {
+				return "true";
+			}
+		}
+	}
+	
+	class AscoltatoreBottoneRegistrati implements ActionListener {
+
+		String user = null;
+		String pw = null;
+		
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			
+			user = inserisciUser.getText();
+			pw = inserisciPW.getText();
+			
+			if (visualizzaTipoComunicazione.getText().equalsIgnoreCase("socket")) {
+				if (registraUtente(user, pw) == 1) {
+					JOptionPane.showMessageDialog(finestraRegistrazione, "Registrazione riuscita");
+					gestioneFinestre.setCorrectWindow(null, null,"login", finestraRegistrazione, visualizzaTipoComunicazione.getText(), null, null, null);
+				}
+				else if (registraUtente(user, pw) == -1) {
+					JOptionPane.showMessageDialog(finestraRegistrazione, "PW non valida");				
+				}
+				else if (registraUtente(user, pw) == 0) {
+					JOptionPane.showMessageDialog(finestraRegistrazione, "Registrazione fallita, riprova");
+					gestioneFinestre.setCorrectWindow(null, null,"login", finestraRegistrazione, visualizzaTipoComunicazione.getText(), null, null, null);					
+				}
+			}
+			else if (visualizzaTipoComunicazione.getText().equalsIgnoreCase("rmi")) {
+				ServerAccept stub = client.getStub();
+				try {
+					if (stub.registra(user, pw).equalsIgnoreCase("ok")) {
+						JOptionPane.showMessageDialog(finestraRegistrazione, "Registrazione riuscita");						
+						gestioneFinestre.setCorrectWindow(null, null,"login", finestraRegistrazione, visualizzaTipoComunicazione.getText(), null, null, null);
+					}
+					else if (stub.registra(user, pw).equalsIgnoreCase("vuota")) {
+						JOptionPane.showMessageDialog(finestraRegistrazione, "PW non valida");						
+					}
+					else if (stub.registra(user, pw).equalsIgnoreCase("fallita")) {
+							JOptionPane.showMessageDialog(finestraRegistrazione, "Registrazione fallita, riprova");						
+							gestioneFinestre.setCorrectWindow(null, null,"login", finestraRegistrazione, visualizzaTipoComunicazione.getText(), null, null, null);
+					}
+				} catch (RemoteException e) {
+					System.out.println("Client-->registrazione non riuscita");
+					System.out.println("r NON: "+e.getMessage());
+					//bisogna decidere cosa fare qua
+				}
+			}
+		}
+		
+		public int registraUtente(String user, String pw) {
+			
+			int risultato = 0;
+			String daInviare = null;
+			String statoRegistrazione = null;
+			Socket clientSocket = null;
+			BufferedReader lettore = null;
+			PrintWriter scrittore = null;
+			
+			AnalisiLogin analisiLogin = new AnalisiLogin();
+			
+			try {
+				//Creo il canale di comunicazione con il server per inviare dati
+				clientSocket = new Socket(HOST, PORT);
+				//Inizializzo chi invia e chi legge i dati
+				lettore = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
+				scrittore = new PrintWriter(clientSocket.getOutputStream(), true);
+				user = analisiLogin.inviaUser(user);
+				pw = analisiLogin.inviaPW(pw);
+				System.out.println("User: "+user+" PW: "+pw);
+				daInviare = "registra@"+user+";"+pw;
+				System.out.println("Invio: "+daInviare);
+				//Invio la stringa sul socket
+				scrittore.println(daInviare);
+				scrittore.flush();
+				//Ascolto la risposta
+				statoRegistrazione = lettore.readLine();
+				System.out.println("Client, statoRegistrazione: "+statoRegistrazione);
+				if (statoRegistrazione.trim().equalsIgnoreCase("1")) {
+					risultato =  1;
+				}
+				else if (statoRegistrazione.trim().equalsIgnoreCase("-1")) {
+					risultato =  -1;
+				}
+				else {
+					risultato = 0;
+				}
+				return risultato;
+			} catch (UnknownHostException e) {
+				System.out.println(HOST+" sconosciuto");
+				return 0;
+			} catch (IOException e) {
+				System.out.println(HOST+" conosciuto con "+PORT+"occupata");
+				return 0;
+			} finally {
+				//Chiudo tutto
+				try {
+					lettore.close();
+					scrittore.close();
+					clientSocket.close();
+				} catch (IOException e) {
+					System.out.println("REG: problemi chiusura lettore e clientSocket");
+					//bisogna decidere cosa fare qua
+				}
+			}
+		}
+	}
+}

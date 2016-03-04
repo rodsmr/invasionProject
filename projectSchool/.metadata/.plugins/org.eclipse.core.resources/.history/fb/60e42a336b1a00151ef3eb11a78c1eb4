@@ -1,0 +1,247 @@
+package prepartita;
+
+import partita.Giocatore;
+import interfacceComunicazione.Client;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.net.*;
+
+
+import partita.PartitaTre;
+
+public class Prepartita {
+	
+	private String coloreRMI = null;
+	
+	public static ArrayList<Giocatore> listaUtenti3 = null;
+	public static ArrayList<Giocatore> listaUtenti4 = null;
+	public static ArrayList<Giocatore> listaUtenti5 = null;
+	public static ArrayList<Giocatore> listaUtenti6 = null;
+	PartitaTre partita = null;
+	
+	private Object lock3 = null;
+	private Object lock4 = null;
+	private Object lock5 = null;
+	private Object lock6 = null;
+	
+	public void setColoreRMI(String coloreRMI) {
+		System.out.println("\t\t\tPrepartita setColore:"+coloreRMI);
+		this.coloreRMI = coloreRMI;
+	}
+	
+	public String getColoreRMI() {
+		return this.coloreRMI;
+	}
+	
+	public ArrayList<Giocatore> instance3(){
+		this.lock3 = new Object();
+		if(listaUtenti3 == null) listaUtenti3 = new ArrayList<Giocatore>();
+		return listaUtenti3;
+	}
+
+	public PartitaTre getPartita3(){
+		return this.partita;
+	}
+
+	
+	
+	public String aggiungiInLista(String username, String numeroGiocatori, Socket client, Client clientInt){
+		
+		Giocatore giocatore = null;
+		
+		if (client != null) {
+			giocatore = new Giocatore(username,client);
+		}
+		else if (clientInt != null){
+			giocatore = new Giocatore(username, clientInt);
+		}
+		
+		Integer numeroPartite = 0;
+		String result = "false";
+		
+		lock3 = new Object();
+		lock4 = new Object();
+		lock5 = new Object();
+		lock6 = new Object();
+		
+		switch(numeroGiocatori){
+		case "3": {
+			partita = new PartitaTre(16,4,3,40);
+			System.out.println("Sono dentro Aggiungilistapartita di server Impl 3");
+			synchronized(lock3){
+				partita.istance();
+				listaUtenti3.add(giocatore);
+				System.out.println("Numero utenti in lista: "+listaUtenti3.size());
+				Iterator<Giocatore> it = listaUtenti3.iterator();
+				System.out.println("Valori listaUtenti3: ");
+				while(it.hasNext()){
+					System.out.println(it.next().getUser());
+				}
+				result = "true";
+				if((listaUtenti3.size()%3)==0){
+					numeroPartite = listaUtenti3.size()/3;
+					for(int i = 0; i < numeroPartite; i++){
+						new Thread(partita3).start();						
+					}
+				}	
+			}			
+			break;
+		}
+		case "4": {
+			
+			System.out.println("Sono dentro Aggiungilistapartita di server Impl 4");
+			synchronized(lock4){
+				partita = new PartitaTre(24,6,4,35);
+				listaUtenti4.add(giocatore);
+				System.out.println("Numero utenti in lista: "+listaUtenti4.size());
+				Iterator<Giocatore> it = listaUtenti4.iterator();
+				System.out.println("Valori listaUtenti4: ");
+				while(it.hasNext()){
+					System.out.println(it.next().getUser());
+				}
+				result = "true"+listaUtenti4.size();
+				if((listaUtenti4.size()%4)==0){
+					numeroPartite = listaUtenti4.size()/4;
+					for(int i = 0; i < numeroPartite; i++){
+						new Thread(partita).start();
+					}
+				}	
+			}		
+			break;
+		}
+		case "5": {
+			partita = new PartitaTre(16,4,3,40);
+			System.out.println("Sono dentro Aggiungilistapartita di server Impl 5");
+			synchronized(lock5){
+				listaUtenti5.add(giocatore);
+				System.out.println("Numero utenti in lista: "+listaUtenti5.size());
+				Iterator<Giocatore> it = listaUtenti5.iterator();
+				System.out.println("Valori listaUtenti5: ");
+				while(it.hasNext()){
+					System.out.println(it.next().getUser());
+				}
+				result = "true"+listaUtenti5.size();
+				if((listaUtenti5.size()%5)==0){
+					numeroPartite = listaUtenti5.size()/5;
+					for(int i = 0; i < numeroPartite; i++){
+						new Thread(partita5).start();
+					}
+				}	
+			}		
+			break;
+		}
+		case "6": {
+			partita = new PartitaTre(16,4,3,40);
+			System.out.println("Sono dentro Aggiungilistapartita di server Impl 6");
+			synchronized(lock6){
+				listaUtenti6.add(giocatore);
+				System.out.println("Numero utenti in lista: "+listaUtenti6.size());
+				Iterator<Giocatore> it = listaUtenti6.iterator();
+				System.out.println("Valori listaUtenti6: ");
+				while(it.hasNext()){
+					System.out.println(it.next().getUser());
+				}
+				result = "true"+listaUtenti6.size();
+				if((listaUtenti6.size()%6)==0){
+					numeroPartite = listaUtenti6.size()/6;
+					for(int i = 0; i < numeroPartite; i++){
+						new Thread(partita6).start();
+					}
+				}	
+			}			
+		}
+		break;
+		}
+		return result;
+	}
+	
+	public String rimuoviInLista(String username, String numeroGiocatori, Socket client) {
+		
+		String result = "false";
+		
+		switch (numeroGiocatori) {
+			case "3": {
+				instance3();
+				int indice = 0;
+				int i = 0;
+				int trovato = 0;
+				synchronized(lock3) {
+					Iterator<Giocatore> it = listaUtenti3.iterator();
+					while (it.hasNext() && trovato == 0) {
+						if (it.next().getUser().equals(username)) {
+							trovato = 1;
+							indice = i;
+						}
+						i++;
+					}
+					if (listaUtenti3.remove(indice) != null) {
+						result = "true";
+					}
+				}
+			}
+			break;
+			case "4": {
+				instance4();
+				int indice = 0;
+				int i = 0;
+				int trovato = 0;
+				synchronized(lock4) {
+					Iterator<Giocatore> it = listaUtenti4.iterator();
+					while (it.hasNext() && trovato == 0) {
+						if (it.next().getUser().equals(username)) {
+							trovato = 1;
+							indice = i;
+						}
+						i++;
+					}
+					if (listaUtenti4.remove(indice) != null) {
+						result = "true";
+					}
+				}				
+			}
+			break;
+			case "5": {
+				instance5();
+				int indice = 0;
+				int i = 0;
+				int trovato = 0;
+				synchronized(lock5) {
+					Iterator<Giocatore> it = listaUtenti5.iterator();
+					while (it.hasNext() && trovato == 0) {
+						if (it.next().getUser().equals(username)) {
+							trovato = 1;
+							indice = i;
+						}
+						i++;
+					}
+					if (listaUtenti5.remove(indice) != null) {
+						result = "true";
+					}
+				}				
+			}
+			break;
+			case "6": {
+				instance6();
+				int indice = 0;
+				int i = 0;
+				int trovato = 0;
+				synchronized(lock6) {
+					Iterator<Giocatore> it = listaUtenti6.iterator();
+					while (it.hasNext() && trovato == 0) {
+						if (it.next().getUser().equals(username)) {
+							trovato = 1;
+							indice = i;
+						}
+						i++;
+					}
+					if (listaUtenti6.remove(indice) != null) {
+						result = "true";
+					}
+				}				
+			}
+			break;
+		}
+		return result;
+	}
+}

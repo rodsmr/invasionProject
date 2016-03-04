@@ -1,0 +1,19 @@
+package interfacceComunicazione;
+
+import java.io.IOException;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+
+import partita.Partita;
+
+public interface Server extends Remote {
+	
+	public String inserimentoListaPrepartita(String username, String player, String metodo) throws RemoteException;
+
+	public String rimuoviInLista(String username, String numeroGiocatori, String metodo) throws RemoteException;
+
+	public void assegnaColoreServerImpl() throws RemoteException;
+	
+	public Partita eseguiComandi(String comandoDaEseguire) throws RemoteException;
+}

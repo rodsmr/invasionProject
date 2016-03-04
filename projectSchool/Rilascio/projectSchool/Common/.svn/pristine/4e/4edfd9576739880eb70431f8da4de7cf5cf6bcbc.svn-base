@@ -1,0 +1,17 @@
+package interfacceComunicazione;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface Client extends Remote {
+
+	public void sayHello(String user) throws RemoteException;
+	
+	public String comandoDaEseguire(String comando) throws RemoteException;
+	
+	public String getComandoDaEseguire() throws RemoteException;
+	
+	public void setColore(String colore) throws RemoteException;
+	
+	public String getScelta() throws RemoteException;
+}

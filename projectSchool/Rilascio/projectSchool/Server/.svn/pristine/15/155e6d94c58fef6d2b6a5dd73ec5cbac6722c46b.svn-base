@@ -1,0 +1,1 @@
+CREATE TABLE giocatorionline (giocatore VARCHAR(20) PRIMARY KEY, metodo VARCHAR(10) NOT NULL)

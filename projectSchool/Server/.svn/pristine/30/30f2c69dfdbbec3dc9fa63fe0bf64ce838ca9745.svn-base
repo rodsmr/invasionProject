@@ -1,0 +1,247 @@
+package partita;
+
+import interfacceComunicazione.Client;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Iterator;
+
+public class TaskPosizionaArmate implements Runnable {
+
+	private Socket client = null;
+	private String username = null;
+	private Giocatore giocatore = null;
+	private Client clientInt = null;
+	private PartitaTre partita = null;
+	
+	private PrintWriter writer = null;
+	private BufferedReader reader = null;
+	
+	private String statoScelta = null;
+	
+	private Iterator<Territorio> iteratoreStati = null;
+	private ArrayList<Territorio> statePlayer = null;
+	private String posizionamento = null;
+	
+	//FOR SOCKET
+	public TaskPosizionaArmate(Socket client, String username, Giocatore user, PartitaTre partita) {
+		this.client = client;
+		this.username = username;
+		this.giocatore = user;
+		this.partita = partita;
+	}
+
+	//FOR RMI
+	public TaskPosizionaArmate(Client clientInt, String username, Giocatore user) {
+		this.clientInt = clientInt;
+		this.username = username;
+		this.giocatore = user;
+	}
+
+	@Override
+	public void run() {
+		System.out.println("Valore di socket in taskposizionaarmate: "+client);
+		System.out.println("-->THREAD POSIZIONAMENTO<--");
+		Giocatore gioc = new Giocatore(username);
+		Integer numeroArmate = 0;
+		//SOCKET
+		if(client != null){
+			try {
+				writer = new PrintWriter(client.getOutputStream(),true);
+				reader = new BufferedReader(new InputStreamReader(client.getInputStream()));
+				
+				statePlayer = giocatore.getLista();
+				
+				
+				numeroArmate = giocatore.getArmate();
+				System.out.println("armate per giocatore: "+gioc.getUser()+" sono: "+numeroArmate);
+				writer.println("posizionamento@"+numeroArmate.toString());
+				writer.flush();
+				System.out.println("posizionamento@"+numeroArmate.toString()+gioc.getUser());
+				//writer.close();			//<--------CHIUSURA POTENZIALE SOCKET
+				System.out.println("posizionamento@ in attesa risposta");
+				//si blocca in attesa di ciò che risponderà il client
+				posizionamento = reader.readLine();
+
+				System.out.println("posizionamento@ risposta: "+posizionamento);
+				//reader.close();
+				sistemaArmate(posizionamento,numeroArmate);
+			
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		else if(clientInt != null){
+				try {
+					numeroArmate = giocatore.getArmate();
+					posizionamento = clientInt.comandoDaEseguire("posizionamento@"+numeroArmate.toString());
+					sistemaArmate(posizionamento,numeroArmate);
+				} catch (RemoteException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				
+				
+				
+				
+				
+				
+				/*String[] armatePosizionate = new String[42];
+				
+				armatePosizionate = statoScelta.substring(12).split(";");
+				
+				ArrayList<Territorio> statePlayer = giocatore.getLista();
+				Iterator<Territorio> itTerr = statePlayer.iterator();
+				Territorio temp = null;
+				
+				while(itTerr.hasNext()){
+					temp = itTerr.next();
+					temp.setArmateTerritorio(Integer.parseInt(armatePosizionate[Integer.parseInt(temp.getCodice())-1]));	
+					partita.posizioneTotale[(Integer.parseInt(temp.getCodice())-1)] = (temp.getNumArmate()).toString();
+					System.out.println("TERRITORIO: "+temp.getCodice()+" \t ARMATE: "+temp.getNumArmate());
+				}
+			
+			
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}*/
+				
+		
+		
+			
+		}
+		partita.contatore++;
+	}
+
+	
+	private void sistemaArmate(String posizionamento, int numeroArmate){
+		System.out.println("Stringa di risposta posizionamento: "+posizionamento);
+		if(posizionamento.equals("posizionate@false")){
+			System.out.println("ENTRA NELL'IF DI FALSE");
+			System.out.println("VALORE DI NUMEROARMATE: "+numeroArmate);
+			iteratoreStati = statePlayer.iterator();
+			Territorio supporto = null;
+			
+			if(numeroArmate == 40){
+				System.out.println("ENTRA NELL'IF");
+				while(iteratoreStati.hasNext()){
+					if(numeroArmate>1){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(3);
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+						numeroArmate-=3;
+					}
+					else if(numeroArmate == 1){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(1);
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+						numeroArmate-=1;
+					}
+				}
+			}
+			if(numeroArmate == 35){
+				while(iteratoreStati.hasNext()){
+					if(numeroArmate>5){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(3);
+						numeroArmate-=3;
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+					}
+					else if(numeroArmate ==5){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(2);
+						numeroArmate-=2;
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+					}
+					else if(numeroArmate <=3 && numeroArmate>0){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(1);
+						numeroArmate-=1;
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+					}
+				}
+			}
+			if(numeroArmate == 30){
+				while(iteratoreStati.hasNext()){
+					if(numeroArmate>9){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(3);
+						numeroArmate-=3;
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+					}
+					else if(numeroArmate <= 9){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(2);
+						numeroArmate-=2;
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+					}
+					else if(numeroArmate <=5 && numeroArmate > 0){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(1);
+						numeroArmate-=1;
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+					}
+				}
+			}
+			if(numeroArmate == 25){
+				while(iteratoreStati.hasNext()){
+					if(numeroArmate>5){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(2);
+						numeroArmate-=2;
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+					}
+					else if(numeroArmate <=5 && numeroArmate > 1){
+						supporto = iteratoreStati.next();
+						supporto.setArmateTerritorio(1);
+						numeroArmate-=1;	
+						System.out.println("Territorio: "+supporto.getCodice()+"\t Armate: "+supporto.getNumArmate());
+					}
+				}
+			}
+			
+			Territorio temp = null;
+			while (iteratoreStati.hasNext()) {
+				temp = iteratoreStati.next();
+				System.out.println("TERRITORIO: "+temp.getCodice()+" \t ARMATE: "+temp.getNumArmate());
+			}
+			
+			iteratoreStati = statePlayer.iterator();
+			while(iteratoreStati.hasNext()){
+				temp = iteratoreStati.next();
+				partita.posizioneTotale[(Integer.parseInt(temp.getCodice())-1)] = (temp.getNumArmate()).toString();
+				System.out.println("ARMATE INSERITE: "+partita.posizioneTotale[(Integer.parseInt(temp.getCodice())-1)]+ "\t ARMATE PRESE: "+temp.getNumArmate());
+			}
+			
+			
+		}
+		else{
+			String[] armatePosizionate = new String[42];
+			armatePosizionate = posizionamento.substring(12).split(";");
+			Territorio temp = null;
+			iteratoreStati = statePlayer.iterator();
+			
+			while(iteratoreStati.hasNext()){
+				temp = iteratoreStati.next();
+				temp.setArmateTerritorio(Integer.parseInt(armatePosizionate[Integer.parseInt(temp.getCodice())-1]));					
+			}
+			
+			iteratoreStati = statePlayer.iterator();
+			
+			while(iteratoreStati.hasNext()){
+				temp = iteratoreStati.next();
+				partita.posizioneTotale[(Integer.parseInt(temp.getCodice())-1)] = (temp.getNumArmate()).toString();
+				System.out.println("ARMATE INSERITE: "+partita.posizioneTotale[(Integer.parseInt(temp.getCodice())-1)]+ "\t ARMATE PRESE: "+temp.getNumArmate());
+
+			}
+		}
+	}
+}

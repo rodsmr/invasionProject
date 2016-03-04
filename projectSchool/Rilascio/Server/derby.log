@@ -1,0 +1,13 @@
+----------------------------------------------------------------
+Thu Jun 25 10:04:32 CEST 2015:
+Avvio della versione di Derby The Apache Software Foundation - Apache Derby - 10.10.1.1 - (1458268): istanza a816c00e-014e-29bf-304e-00000393c298
+sulla directory di database C:\Users\685529\Desktop\Rilascio\Server\invasion con caricatore classi sun.misc.Launcher$AppClassLoader@4e25154f 
+Caricato da file:/C:/Users/685529/Desktop/Rilascio/Server/libs/derby.jar
+java.vendor=Oracle Corporation
+java.runtime.version=1.8.0_45-b14
+user.dir=C:\Users\685529\Desktop\Rilascio\Server
+os.name=Windows 8.1
+os.arch=amd64
+os.version=6.3
+derby.system.home=null
+Programma di caricamento classe database avviato - derby.database.classpath=''

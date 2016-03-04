@@ -1,0 +1,57 @@
+package login;
+
+import java.io.*;
+import java.net.*;
+
+public class ServerTaskVerifica {
+	
+	private Socket clientSocket = null;
+	private String comando = null;
+	
+	public ServerTaskVerifica(Socket clientSocket, String comando){
+		this.clientSocket = clientSocket;
+		this.comando = comando;
+	}
+
+
+	public synchronized void run() {
+		
+		PrintWriter writer = null;
+		String nome = null;
+		
+		String risultato = null;
+		int primaAt = comando.indexOf('@');
+		comando = comando.substring(9);
+		/*int middleSeparator = comando.indexOf(':');
+		int endSeparator = comando.lastIndexOf('#');*/
+		System.out.println(comando);
+		OperazioniLogin oplogin = new OperazioniLogin();
+		
+		try {
+			
+			writer = new PrintWriter(clientSocket.getOutputStream(),true);
+			
+			nome = "";
+			int i = 0;
+			
+			for(i = primaAt + 1; i < comando.length(); i++){
+				nome = nome+comando.charAt(i); 
+			}
+			
+			System.out.println("Nome ricevuto dal client: "+nome);
+			
+			risultato = oplogin.verifica(nome);
+			
+			writer.println(risultato);
+			writer.flush();
+			writer.close();
+			
+		} catch (IOException e) {
+			System.err.println("Errore creazione lettore/scrittore nel thread");
+		}
+		
+		
+	}
+	
+	
+}

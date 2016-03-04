@@ -1,0 +1,24 @@
+package avviaServer;
+
+import java.rmi.RemoteException;
+
+import comunicazione.StartServerAcceptRMI;
+import comunicazione.StartServerSocket;
+
+public class StartServer {
+	
+	public static void main(String[] args) {
+		
+		try {
+			new StartServerAcceptRMI().start();
+		} catch (RemoteException e) {
+			System.out.println("Errore avvio RMI");
+			//bisogna decidere cosa fare
+		}
+		//sarà il caso di far lanciare una eccezione
+		//se non parte il socket?
+		new StartServerSocket().start();
+	}	
+}
+
+

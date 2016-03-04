@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CommitComments>	<CommitComment>Spostamento grafica credo OK</CommitComment>
+	<CommitComment>Gestione attacco</CommitComment>
+	<CommitComment>Sistemata grafica</CommitComment>
+	<CommitComment>Che coioni</CommitComment>
+	<CommitComment>Risolto problema con registrazione @</CommitComment>
+	<CommitComment>Aggiunto metodo per lanciare il dado</CommitComment>
+	<CommitComment>Dado
+</CommitComment>
+	<CommitComment>Sistemazione del metodo annulla. Testato su RMI in quanto socket si impalla sul tasto di selezione della partita</CommitComment>
+	<CommitComment>Il campo PW è diventato oscurato</CommitComment>
+	<CommitComment>Registrazione sistemata: causava problemi un conflitto con il DB in quanto segnalava una colonna inesistente (nel mio DB locale). Bisogna sistemare la parte relativa alle statistiche lato login.</CommitComment>
+</CommitComments>

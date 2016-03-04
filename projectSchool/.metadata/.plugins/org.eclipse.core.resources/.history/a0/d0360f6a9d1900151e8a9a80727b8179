@@ -1,0 +1,49 @@
+package mappa;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.Timer;
+
+public class TaskTimer implements Runnable {
+	
+	Mappa mappa = null;
+	Timer timer = null;
+	int conteggioTimer = 0;
+	int limite = 0;
+	
+	public TaskTimer(Mappa mappa,int limite) {
+		this.mappa = mappa;
+		this.limite = limite;
+		this.timer = new Timer(0,new AscoltatoreTimer());
+	}
+
+	@Override
+	public void run() {
+		timer.start();
+	}
+	
+	class AscoltatoreTimer implements ActionListener {
+
+		@Override
+		public void actionPerformed(ActionEvent arg0) {
+			
+			try {
+				Thread.sleep(1000);
+				conteggioTimer++;
+				if(conteggioTimer>limite){
+					mappa.setTimeout(true);
+				}
+			} catch (InterruptedException e) {
+			
+			}
+		}
+
+	}
+
+	public void stoppaTimer() {
+		timer.stop();
+
+	}
+
+}

@@ -1,0 +1,21 @@
+package partita;
+
+import java.awt.Rectangle;
+
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+public class Dado extends JComponent {
+	
+	Rectangle dado = null;
+	JLabel valoreEstrazione = null;
+	
+	public Dado() {
+		dado = new Rectangle(10, 10, 30, 30);
+		valoreEstrazione = new JLabel("1");
+		valoreEstrazione.setBounds(15, 15, 15, 15);
+		valoreEstrazione.setVisible(true);
+		
+	}
+
+}

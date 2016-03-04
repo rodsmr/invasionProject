@@ -1,0 +1,359 @@
+package partita;
+//ciao
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.util.ArrayList;
+
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JRadioButton;
+
+import mappa.Mappa;
+
+public class GestioneComandiPartita implements Runnable {
+
+	//Avrà un socket che dovrà essere passato, legge il comando e lo elabora
+	private String territorioPerMossa = "null";
+	private int armateDifesa = 0;
+	private String territorioDaDifendere = "null";
+	private int pedine = 0;
+	private Socket clientConnesso = null;
+	private Mappa mappa = null;
+	private String coloreUser = null;
+	private String username = null;
+	private PrintWriter scrittore = null;
+	private BufferedReader reader = null;
+	private ArrayList<String> indiceTerritori = null;
+	private Partita partita = null;
+	public String esito = "false";
+	
+	public void setPedine(int pedine) {
+		System.out.println("Setting pedine: "+pedine);
+		this.pedine = pedine;
+	}
+	
+	public void setTerritorioPerMossa(String attacco) {
+		System.out.println("Setting tA/S: "+attacco);
+		this.territorioPerMossa = attacco;
+	}
+	
+	public void setDifesa(String difesa) {
+		System.out.println("Setting tD: "+difesa);
+		this.territorioDaDifendere = difesa;
+	}
+	
+	
+	public void setVariabili(Socket clientConnesso, ArrayList<String> indiceTerritori,String coloreUser,String username,Partita partita, Mappa map) {
+		this.clientConnesso = clientConnesso;
+		this.indiceTerritori = indiceTerritori;
+		this.coloreUser = coloreUser;
+		this.username = username;
+		this.partita = partita;
+		this.mappa = map;
+
+		try {
+			reader = new BufferedReader(new InputStreamReader(clientConnesso.getInputStream()));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void run() {
+
+		String comandoLetto = null;
+		
+		if(clientConnesso!=null){
+			try {
+				//PrintWriter writer = new PrintWriter(clientConnesso.getOutputStream(),true);
+				
+				//PER COMANDO TERRITORI
+				comandoLetto = reader.readLine();
+				System.out.println("COMANDO DA ESEGUIRE: "+comandoLetto);
+				esito = eseguiComando(comandoLetto);
+				System.out.println("ESITO FINE TERRITORI: "+esito);
+
+				//questo diventerà un while (indiceTerritori.size() != 0)
+				while(!reader.ready()){
+					Thread.sleep(5000);
+				}
+				//PER COMANDO POSIZIONA
+				comandoLetto = reader.readLine();
+				System.out.println("COMANDO DA ESEGUIRE: "+comandoLetto);
+				esito = eseguiComando(comandoLetto);
+				System.out.println("ESITO FINE POSIZIONAMENTO: "+esito);
+				
+				while(!reader.ready()){
+					Thread.sleep(5000);
+				}
+				//PER COMANDO AGGIORNA
+				comandoLetto = reader.readLine();
+				System.out.println("COMANDO DA ESEGUIRE: "+comandoLetto);
+				esito = eseguiComando(comandoLetto);
+				if(esito.equals("true"))
+					System.out.println("AGGIORNAMENTO RIUSCITO");
+				
+				//PER IL MIO TURNO: INIZIO ATTACCA
+				while(!reader.ready()){
+					Thread.sleep(5000);
+				}
+				comandoLetto = reader.readLine();
+				System.out.println("COMANDO DA ESEGUIRE: "+comandoLetto);
+				esito = eseguiComando(comandoLetto);
+				System.out.println("ESECUZIONE: "+esito);
+
+				//PER IL MIO TURNO: RICEZIONE TERRITORI POSSIBILI
+				while(!reader.ready()){
+					Thread.sleep(5000);
+				}
+				comandoLetto = reader.readLine();
+				System.out.println("COMANDO DA ESEGUIRE: "+comandoLetto);
+				esito = eseguiComando(comandoLetto);
+				System.out.println("ESECUZIONe: "+esito);
+
+				//PER IL MIO TURNO: DIFESA
+				while(!reader.ready()){
+					Thread.sleep(5000);
+				}
+				comandoLetto = reader.readLine();
+				System.out.println("COMANDO DA ESEGUIRE: "+comandoLetto);
+				esito = eseguiComando(comandoLetto);
+				System.out.println("ESECUZIONe: "+esito);
+				
+				//PER IL MIO TURNO: DADO
+				while(!reader.ready()){
+					Thread.sleep(5000);
+				}
+				comandoLetto = reader.readLine();
+				System.out.println("COMANDO DA ESEGUIRE: "+comandoLetto);
+				esito = eseguiComando(comandoLetto);
+				System.out.println("ESECUZIONe: "+esito);
+				
+			} catch (IOException | InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}			
+		}
+	}
+	
+	public String eseguiComando(String comandoDaEseguire){
+			
+		String inizioComando = comandoDaEseguire;
+		String[] insiemeTerritori = null;
+		int i = 0;
+		
+		if (comandoDaEseguire.startsWith("territorio")) {
+			inizioComando = "territorio";
+		}
+		
+		else if (comandoDaEseguire.startsWith("posizionamento")){
+			inizioComando = "posizionamento";
+		}
+		
+		else if (comandoDaEseguire.startsWith("aggiorna")){
+			inizioComando = "aggiorna";
+		}
+		else if (comandoDaEseguire.startsWith("turno")) {
+			inizioComando = "turno";
+		}
+		else if (comandoDaEseguire.startsWith("attaccabili")) {
+			inizioComando = "attaccabili";
+		}
+		else if (comandoDaEseguire.startsWith("difesa")) {
+			inizioComando = "difesa";
+		}
+		else if (comandoDaEseguire.startsWith("dado")) {
+			inizioComando = "dado";
+		}
+		
+		switch (inizioComando) {
+
+			case "territorio":{
+				insiemeTerritori = new String[15]; //dovrebbe aver dimensione massima 14 (#player = 3), 15 per safety
+				comandoDaEseguire = comandoDaEseguire.substring(11);
+				//System.out.println("Comando dopo sub: "+comandoDaEseguire);
+				insiemeTerritori = comandoDaEseguire.split(";");
+				for (i = 0; i < insiemeTerritori.length; i++) {
+					if (indiceTerritori.add(insiemeTerritori[i])) {
+						esito = "true";
+					}
+					else {
+						esito = "false";
+					}
+				}
+				if(esito.equals("true")){
+					mappa.coloraMappa(indiceTerritori);
+					mappa.getFinestraMappa().setVisible(true);
+					mappa.setAttaccoDa();
+				}
+				break;
+			}
+			case "posizionamento":{
+				System.out.println("GESTIONE COMANDI: POSIZIONAMENTO");
+				String result = null;
+				Integer numeroArmate = 0;
+				esito = "false";			
+				
+				comandoDaEseguire = comandoDaEseguire.substring(15);
+				numeroArmate = Integer.parseInt(comandoDaEseguire);
+				mappa.setArmate(numeroArmate);
+				result = mappa.posizionaArmate(this);
+				while(!esito.equals("true")){
+					try {
+						//System.out.println("BLOCCATO: "+esito);
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				System.out.println("USCITO DA POSIZIONAMENTO");
+				break;
+			}			
+			case "aggiorna":{
+				System.out.println("GESTIONE COMANDI: AGGIORNA");
+				
+				comandoDaEseguire = comandoDaEseguire.substring(9);
+				esito = mappa.aggiorna(comandoDaEseguire);
+				break;
+			}
+			case "turno": {
+				System.out.println("--> ATTACCA <--");
+				String result = null;
+				mappa.interazioneMosse();
+				result = mappa.territorioDaAttaccare(this);
+				while (!(territorioPerMossa.startsWith("at") || territorioPerMossa.startsWith("sp") || territorioPerMossa.startsWith("fi"))) {
+					try {
+						Thread.sleep(2000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}	
+				}
+				System.out.println("--> FINE ATTACCA: "+territorioPerMossa+"<--");
+				
+				esito = territorioPerMossa;
+				
+				break;
+			}
+			case "attaccabili": {
+				String result = null;
+				System.out.println("-->TERRITORI ATTACCABILI<--");
+				comandoDaEseguire = comandoDaEseguire.substring(12);
+				System.out.println(comandoDaEseguire);
+				result = mappa.setTerritoriGiocata(comandoDaEseguire);
+				pedine = 0;
+				while (pedine == 0)  {
+					try {
+						Thread.sleep(1000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				System.out.println("--> TERRITORI ATTACCABILI: "+result+"<--");
+				break;
+			}
+			case "difesa": {
+				comandoDaEseguire = comandoDaEseguire.substring(7);
+				String[] temp = new String[3];
+				temp = comandoDaEseguire.split(";");
+				armateDifesa = mappa.difenditi(Integer.parseInt(temp[2]));
+				mappa.coloraDifesa(temp[0], temp[1]);
+				System.out.println("Mi difendo con: "+armateDifesa+" armate");
+				break;
+			}
+			case "dado": {
+				comandoDaEseguire = comandoDaEseguire.substring(5);
+				String[] temp = new String[2];
+				temp = comandoDaEseguire.split("#");
+
+				String[] dadiAttacco = new String[3];
+				temp[0] = temp[0].substring(8);
+				dadiAttacco = temp[0].split(";");
+				
+				String[] dadiDifesa = new String[2];
+				temp[1] = temp[1].substring(7);
+				dadiDifesa = temp[1].split(";");
+				int p = 0;
+				
+				for (p = 0; p < 3; p++) {
+					System.out.println("Attacco "+(p+1)+": "+dadiAttacco[p]);
+				}
+				for (p = 0; p < 2; p++) {
+					System.out.println("Difesa "+(p+1)+": "+dadiDifesa[p]);
+				}
+				
+				mappa.valoreDadi(dadiAttacco, dadiDifesa);
+				break;
+			}
+		}
+		
+		if(clientConnesso != null){
+			try {
+				setScrittore(new PrintWriter(clientConnesso.getOutputStream(), true));
+				System.out.println("STO PER SCRIVERE: "+inizioComando+"@"+esito);
+				switch (inizioComando) {
+					case "turno": {
+						getScrittore().println(esito);
+						getScrittore().flush();					
+						break;
+					}
+					case "attaccabili": {
+						getScrittore().println("attacco@"+territorioPerMossa.substring(8)+";"+territorioDaDifendere+";"+pedine);
+						getScrittore().flush();	
+						break;
+					}
+					case "difesa": {
+						getScrittore().println(armateDifesa);
+						getScrittore().flush();	
+						break;
+					}
+					case "posizionamento": {
+						break;
+					}
+					default: {
+						getScrittore().println(inizioComando+"@"+esito);
+						getScrittore().flush();		
+						break;
+					}
+				}		
+			} catch (IOException e) {
+				getScrittore().println(inizioComando+"@false");
+				getScrittore().flush();
+				System.out.println("GESTCOMPARTITA: writer error: "+e.getMessage());
+			}
+		}
+		return esito;
+	}
+	
+
+	/**
+	 * @return the scrittore
+	 */
+	public PrintWriter getScrittore() {
+		return scrittore;
+	}
+
+	/**
+	 * @param scrittore the scrittore to set
+	 */
+	public void setScrittore(PrintWriter scrittore) {
+		this.scrittore = scrittore;
+	}
+
+	public Socket getSocket() {
+		return this.clientConnesso;
+	}
+
+
+}

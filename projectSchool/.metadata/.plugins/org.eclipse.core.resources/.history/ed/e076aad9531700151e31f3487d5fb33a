@@ -1,0 +1,13 @@
+package partita;
+
+import java.util.ArrayList;
+
+public abstract class Partita {
+
+	public abstract void assegnaArmate();
+	public abstract void posizionaArmate();
+	public abstract void assegnaColore();
+	public abstract String assegnaTerritori(ArrayList<Territorio> lista);
+	public abstract ArrayList<Giocatore> getGiocatore();
+	
+}

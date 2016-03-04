@@ -1,0 +1,63 @@
+package comunicazione;
+
+import java.io.*;
+import java.net.*;
+import java.sql.*;
+
+import login.TaskGestioneComandi;
+
+public class StartServerSocket {
+	private Statement statement = null;
+	private static final int PORT = 4500;
+	
+	public synchronized void setStatement(Statement statement) {
+		this.statement = statement;
+	}
+
+	public Statement getStatament() {
+		/*if (this.statement == null) {
+			System.out.println("NUllo statement mio");
+		}
+		else {
+			System.out.println("Buono statement mio");
+		}*/
+		return this.statement;
+	}
+
+	public void start() {
+		
+		ServerSocket serverSocket = null;
+		Socket clientSocket = null;
+		Thread thread = null;
+		TaskGestioneComandi taskGestione = null;
+		
+		try {
+			//Bisogna chiuderla quando si fa:
+			//1 LOGOUT
+			//2 SI PERDE LA CONNESSIONE (come si vede ciò?)
+			serverSocket = new ServerSocket(PORT);
+			System.out.println("Socket avviato");
+		} catch (IOException e) {
+			System.out.println("Errore listen su "+PORT);
+			System.exit(1);
+			//se non si connette al socket bisogna decidere il da farsi
+			//è giusto farlo morire?
+		}
+		while(true){
+			try {
+				clientSocket = serverSocket.accept();
+				taskGestione = new TaskGestioneComandi(clientSocket);
+				thread = new Thread(taskGestione);
+				thread.start();
+			} catch (IOException e) {
+				System.err.println("Errore su accept da parte del server");
+				//bisogna decidere cosa fare
+			}
+		}
+	}	
+}
+
+	
+	
+
+

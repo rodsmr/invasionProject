@@ -1,0 +1,86 @@
+package login;
+
+import java.net.Socket;
+import java.io.*;
+
+import analisiComandi.AnalisiLogin;
+
+import comunicazione.GestioneDatabase;
+
+public class ServerTaskLogin {
+
+	private GestioneDatabase gestioneDB = null;
+	
+	private Socket client = null;
+	private String comando = null;
+	private PrintWriter scrittore = null;
+	private AnalisiLogin analisiLogin = null;
+	
+	public ServerTaskLogin(Socket client, String comando) {
+		this.client = client;
+		this.comando = comando;
+		
+		gestioneDB = new GestioneDatabase();
+		analisiLogin = new AnalisiLogin();
+	}
+
+
+	public void run() {
+		
+		comando = comando.substring(6);
+		int posizioneSeparatore = analisiLogin.posizioneSeparatore(comando);//posizioneSeparatoreDati(comando);		
+		System.out.println("Separatore: "+posizioneSeparatore);
+		String user = analisiLogin.decodificaUser(comando, posizioneSeparatore);//getUserFromComando(comando, posizioneSeparatore);
+		String pw = analisiLogin.decodificaPW(comando, posizioneSeparatore);//getPWFromComando(comando, posizioneSeparatore);		
+		System.out.println("User per LOGIN ricevuto: "+user);
+		System.out.println("PW per LOGIN ricevuto: "+pw);
+		String result = null;
+		
+		scrittore = null;
+		OperazioniLogin opLogin = new OperazioniLogin();
+		
+		result = opLogin.login(user, pw);
+		System.out.println("Esito di "+user+" e "+pw+": "+result);
+		if (result.equals("true")) {	
+			try {
+				gestioneDB.start();
+				//System.out.println("gestioneDB.checkOnlineUser(user, socket)"+gestioneDB.checkOnlineUser(user, "socket"));
+				if (!(gestioneDB.checkOnlineUser(user, "socket"))) {
+					/*nodo[0] = user;
+					nodo[1] = "socket";
+					synchronized(lock){			
+						if(lista.add(nodo)) System.out.println("Aggiunta a buon fine socket");
+						else System.out.println("Fallito SOCKET!");
+					}
+					int numero = lista.size();
+					Iterator<String[]> it = lista.iterator();
+					
+					System.out.println("Numero utenti online: "+numero);
+					while(it.hasNext()){
+						System.out.println("Utente: "+it.next()[0]);
+					//System.out.println("\tComunicazione: "+it.next()[1]);
+					}*/					
+					result = "ok@";
+				}
+				else {
+					result = "ko@prevLog";
+				}
+			} catch (Exception e) {
+				result = "ko@sqlExcp";
+			}
+		}
+		else {
+			result = "ko@invalidData";
+		}
+		
+		try {
+			scrittore = new PrintWriter(client.getOutputStream(),true);
+			scrittore.print(result);
+			scrittore.flush();
+			scrittore.close();
+		}
+		catch(IOException e){
+			scrittore.println("false");
+		}
+	}
+}

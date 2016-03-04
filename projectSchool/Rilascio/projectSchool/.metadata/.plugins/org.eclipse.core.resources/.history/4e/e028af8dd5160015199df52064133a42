@@ -1,0 +1,191 @@
+package login;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import comunicazione.GestioneDatabase;
+import comunicazione.StartServerSocket;
+
+public class OperazioniLogin {
+	
+	GestioneDatabase gestioneDatabase = null;
+	
+	Statement st = null;
+	StartServerSocket start = null;
+	String result = null;
+	
+	public OperazioniLogin() {
+		result = "false";
+	}	
+	
+	/**
+	 * La funzione logout avvia il database, crea lo statement ed esegue la query di rimozione
+	 * @param user dell'utente che svolge il logout
+	 * @return una variabile Stringa in cui c'è il risultato del logout
+	 */
+	public String logout(String user) {
+		System.out.println("OPERAZIONI LOGIN --> LOGOUT");
+		GestioneDatabase gestioneDatabase = new GestioneDatabase();
+		Statement st = null;
+		String query = "DELETE FROM giocatorionline WHERE giocatore = '"+user+"'";
+		String valoreRitorno = null;
+		
+		try {
+			gestioneDatabase.start();
+			System.out.println("DB AVVIATO");
+		} catch (Exception e) {
+			System.out.println("DB non avviato");
+			System.out.println("Message not start: "+e.getMessage());
+		}
+		try{
+			st = gestioneDatabase.getConnessione().createStatement();
+			Integer result = st.executeUpdate(query);
+			if(result==1){
+				valoreRitorno = "true";
+			}
+			else if(result==0){
+				valoreRitorno = "false";
+			}
+			System.out.println("QUERY ESEGUITA");
+			st.close();
+			gestioneDatabase.chiudiRisorse();
+		}
+		catch(SQLException e){
+			System.out.println("Problema creazione statement");
+			System.out.println("Errore nel risultato della query");
+			System.out.println("Message in verifica: "+e.getMessage());
+			valoreRitorno = "false";
+		}
+		System.out.println("OPERAZIONI LOGIN --> FINE LOGOUT");
+		return valoreRitorno;
+	}
+
+	public String login(String user, String psw){
+
+		System.out.println("USERNAME LOGINDB: "+user);
+		GestioneDatabase gestioneDatabase = new GestioneDatabase();
+		Statement st = null;
+		
+		try{
+			gestioneDatabase.start();
+		} catch(Exception e){
+			System.out.println("DB non avviato");
+			System.out.println("Message not start: "+e.getMessage());
+		}
+		try{
+			st = gestioneDatabase.getConnessione().createStatement();
+			ResultSet risultatoQuery = null;
+			
+			risultatoQuery = st.executeQuery("SELECT giocatore, password  FROM utente");
+			//String risultato = null;
+			while(risultatoQuery.next() && result=="false"){
+				/*risultato = risultatoQuery.getString("giocatore");
+				if(risultato.equals(user)){
+					result = "true";
+				}*/
+				if (risultatoQuery.getString("giocatore").equals(user) && risultatoQuery.getString("password").equals(psw)) {
+					result = "true";
+				}
+				else {
+					result = "false";
+				}
+			}
+			risultatoQuery.close();
+			st.close();
+			//gestioneDatabase.chiudiRisorse();
+		}
+		catch(SQLException e){
+			System.out.println("Problema creazione statement");
+			System.out.println("Errore nel risultato della query");
+			System.out.println("Message in verifica: "+e.getMessage());
+			result = "false";
+		}
+		return result;	
+	}
+	
+	public String verifica(String user) {	
+		
+		GestioneDatabase gestioneDatabase = new GestioneDatabase();
+		Statement st = null;
+		
+		try {
+			gestioneDatabase.start();
+		} catch (Exception e1) {
+			System.out.println("DB non avviato");
+			System.out.println("Message not start: "+e1.getMessage());
+			//bisogna decidere cosa fargli fare
+			//non basta
+			//result = "true";
+		}
+		try {
+			st = gestioneDatabase.getConnessione().createStatement();
+
+			ResultSet risultatoQuery = null;
+
+			System.out.println("Verifica user effettivo: "+user);
+			System.out.println("opLogin->verifica->querySelect");
+			risultatoQuery = st.executeQuery("SELECT giocatore FROM utente");
+			System.out.println("AFTER opLogin->verifica->querySelect");
+			String risultato = null;
+			while(risultatoQuery.next() && result == "false"){
+				risultato = risultatoQuery.getString("giocatore");
+				System.out.println("-->Verifica: "+risultato+" "+user);
+				if(risultato.equals(user)){
+					result = "true";
+				}				
+			}
+			risultatoQuery.close();
+			st.close();
+			gestioneDatabase.chiudiRisorse();
+		} catch (SQLException e) {
+			System.out.println("Problema creazione statement");
+			System.out.println("Errore nel risultato della query");
+			System.out.println("Message in verifica: "+e.getMessage());
+			result = "true";
+		}
+		return result;
+	}
+	
+	public String registra(String user, String password){
+		
+		GestioneDatabase gestioneDatabase = new GestioneDatabase();
+		Statement st = null;
+		String result = null;
+		
+		if (password.equalsIgnoreCase("")) {
+			return "vuota"; //quando la password è vuota 
+		}		
+		else {
+			
+			try {
+				gestioneDatabase.start();
+			} catch (Exception e1) {
+				System.out.println("DB non avviato");
+				System.out.println("Message not start: "+e1.getMessage());
+				//bisogna decidere cosa fargli fare
+				//non basta
+				//result = "fallita";
+			}
+			System.out.println("--->registra: "+user+" "+password);
+			String query = "INSERT INTO utente(giocatore, password, punteggio) VALUES('"+user+"','"+password+"',0)";
+			try {
+				
+				st = gestioneDatabase.getConnessione().createStatement();
+				
+				if (st.executeUpdate(query) == 1) {
+					System.out.println("Registrazione OK");
+					result = "ok";
+				}
+				else {
+					result = "fallita";
+				}
+				st.close();
+				gestioneDatabase.chiudiRisorse();
+			} catch (SQLException e) {
+				result = "fallita";
+			}
+			return result;
+		}
+	}
+}

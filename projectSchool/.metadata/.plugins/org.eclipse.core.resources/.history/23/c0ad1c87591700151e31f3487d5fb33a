@@ -1,0 +1,80 @@
+package analisiComandi;
+
+public class AnalisiLogin {
+
+	public String inviaUser(String user) {
+		user = user.replaceAll("#", "§#");
+		return user.replaceAll(";", "#;");
+	}
+	
+	public String inviaPW(String pw) {
+		return pw.replaceAll(";", "#;");
+	}
+	
+	public String interpretazioneEsitoLogin(String esito) {
+		
+		if (esito.startsWith("ok@")) {
+			esito = "true";
+		}
+		else if (esito.startsWith("ko@")) {
+			esito = esito.substring(3);
+		}
+		
+		return esito;
+	}	
+	
+	public String decodificaUser(String comando, int posizioneSeparatore) {
+
+		int i = 0;
+		String user = "";
+		
+		for (i = 0; i < posizioneSeparatore; i++) {
+			user += comando.charAt(i);
+		}
+		user = user.replaceAll("#;", ";");
+		return user.replaceAll("§#", "#");
+	}
+	
+	public String decodificaPW(String comando, int posizioneSeparatore) {
+
+		int i = posizioneSeparatore + 1;
+		String pw = "";
+		
+		for (i = posizioneSeparatore + 1; i < comando.length(); i++) {
+			pw += comando.charAt(i);
+		}
+		
+		return pw.replaceAll("#;", ";");
+	}
+	
+	public int posizioneSeparatore(String comando) {
+		
+		int posizioneSep = 0;
+		int i = 0;
+		int primaAt = comando.indexOf('@');
+		String utente = "";
+		
+		//Prendo [username];[password]
+		for (i = primaAt+1; i < comando.length(); i++) {
+			utente += comando.charAt(i);
+		}
+		//System.out.println("posizioneSeparatore: "+utente.toString());
+		//Prendo posizioneSeparatore
+		for (i = 0; i < utente.length(); i++) {
+			if (utente.charAt(i) == ';') {
+				if (utente.charAt(i-1) == '#') {
+					if (utente.charAt(i-2) == '§') {
+						posizioneSep = i;
+					}
+				}
+				else {
+					posizioneSep = i;
+				}
+			}
+		}
+		
+		return posizioneSep;
+		
+	}
+	
+}

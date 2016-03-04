@@ -1,0 +1,51 @@
+package mappa;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Rectangle;
+
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+public class Dado extends JComponent {
+	
+	private Rectangle rettangolo = null;
+	private int numero = 0;
+	private Color colore = null;
+	
+	public Dado(Color colore) {
+		
+		rettangolo = new Rectangle(50, 50);
+		
+		this.colore = colore;
+		
+		repaint();
+	}
+	
+	public void setNumero(int numero) {
+		this.numero = numero;
+	}
+	
+	public void disegnaNumero(Graphics g, int x, int y) {
+		Graphics2D g2 = (Graphics2D) g;
+		g2.setColor(Color.black);
+		if (val > 1) // punto in alto a sinistra
+			g.fillOval(x+3, y+3, 9, 9);
+			if (val > 3) // punto in alto a destra
+			g.fillOval(x+23, y+3, 9, 9);
+			if (val == 6) // punto nel mezzo a sinistra
+			g.fillOval(x+3, y+13, 9, 9);
+			if (val % 2 == 1) // punto al centro
+			g.fillOval(x+13, y+13, 9, 9);
+			if (val == 6) // punto nel mezzo a destra
+			g.fillOval(x+23, y+13, 9, 9);
+		
+	}
+	public void paintComponent(Graphics g) {
+		Graphics2D g2 = (Graphics2D) g;
+		g2.setColor(colore);
+		g2.fill(rettangolo);
+	}
+
+}

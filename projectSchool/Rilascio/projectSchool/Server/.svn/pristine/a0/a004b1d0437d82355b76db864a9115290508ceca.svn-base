@@ -1,0 +1,43 @@
+package partita;
+
+import java.util.ArrayList;
+
+public class PartitaCinque extends Partita implements Runnable  {
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void assegnaArmate() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void posizionaArmate() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void assegnaColore() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public String assegnaTerritori(ArrayList<Territorio> lista) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ArrayList<Giocatore> getGiocatore() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

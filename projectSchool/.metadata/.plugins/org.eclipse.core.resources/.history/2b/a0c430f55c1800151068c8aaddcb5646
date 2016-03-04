@@ -1,0 +1,22 @@
+package avviaClient;
+
+import partita.FinestraColori;
+import login.FinestraComunicazione;
+import mappa.Mappa;
+
+/**
+ * 
+ * @author Antonio Iannacci - Marco Rodella
+ *
+ */
+
+public class StartGame {
+	
+	/**
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		new FinestraComunicazione();
+		//new Mappa("alfino","azzurro");
+	}
+}

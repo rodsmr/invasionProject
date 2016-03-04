@@ -1,0 +1,158 @@
+package comunicazione;
+
+import interfacceComunicazione.ServerAccept;
+import interfacceComunicazione.Server;
+import interfacceComunicazione.Client;
+
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+
+import prepartita.ServerImpl;
+import login.OperazioniLogin;
+
+public class StartServerAcceptRMI extends UnicastRemoteObject implements ServerAccept {
+	
+	private static final long serialVersionUID = 1L;
+
+	private static final String HOST = "127.0.0.1";
+	private static final String URL = "rmi://"+HOST+"/serverAccept";
+	
+	private Registry registry = null;
+	private ServerAccept stub = null;
+
+	
+	private Thread serverThread = null;
+	private ServerImpl server = null;
+	
+	//Costruttore: da utilizzare quando farò il login
+	public StartServerAcceptRMI() throws RemoteException {
+	}
+
+	//start: avvia il server
+	public void start() {
+		
+		System.out.println("-->START<--");
+		
+		try {
+			if (System.getSecurityManager() == null) {
+				System.setSecurityManager(new SecurityManager());
+				System.out.println("-->Ho creato il Security Manager");
+			}
+			
+			stub = new StartServerAcceptRMI();
+			System.out.println("-->Ho creato lo stub");
+			
+			if (stub.equals(null)) System.out.println("Stub non c'è");
+			
+			registry = LocateRegistry.getRegistry(HOST);
+			System.out.println("-->Ho creato il registro sull'"+HOST);
+
+			System.out.println("-->Tento rebind di stub sull'"+URL);
+			registry.rebind(URL, stub);
+			System.out.println("-->Rebind di stub sull'"+URL);
+			
+		} catch (RemoteException e) {
+			System.out.println("Errori d'avvio di RMI");
+			System.out.println("Message: "+e.getMessage());
+			//bisogna decidere cosa fargli fare
+		}
+		
+	}
+	
+	@Override
+	public String verifica(String username) throws RemoteException {
+		System.out.println("-->Attesa risultato di: "+username);
+		return (new OperazioniLogin()).verifica(username);
+	}
+
+	@Override
+	public String registra(String username, String password) throws RemoteException {
+		System.out.println("-->Attesa risultato di: "+username+";"+password);
+		return (new OperazioniLogin()).registra(username, password);
+	}
+
+	@Override
+	public Server loginRMI(String username, String password, Client client) throws RemoteException {
+		
+		boolean utentePresente = false;
+		GestioneDatabase gestData = new GestioneDatabase();
+		System.out.println("Ho invocato loginRMI");
+		System.out.println("Username: "+username);
+		System.out.println("Password: "+password);
+		if ((new OperazioniLogin()).login(username, password).equals("true")) {
+			//Il Client che mi arriva è buono.
+			server = new ServerImpl(username, client, this);
+			/*
+			System.out.println("USERNAME LOGINRMI: "+username);
+			nodo[0] = username;
+			nodo[1] = "rmi";
+			
+			int numero = lista.size();
+			Iterator<String[]> it = lista.iterator();
+			
+			System.out.println("Numero utenti online: "+numero);
+			while(it.hasNext()){
+				if(!(username.equals(it.next()[0]))){
+					System.out.println("Utente: "+it.next()[0]);
+					synchronized(lock) {
+						if(lista.add(nodo)) System.out.println("Aggiunta a buon fine RMI");
+						else System.out.println("Fallito RMI!");
+					}
+				}
+				else flag = 1;
+			//System.out.println("\tComunicazione: "+it.next()[1]);
+			}
+			if(flag == 1){
+				
+			}
+			return server;
+		}
+		else {
+			return null;
+		}
+	}*/
+		try {
+			gestData.start();
+			utentePresente = gestData.checkOnlineUser(username, "rmi");
+			if(utentePresente) {
+				System.out.println("Utente già presente, server nullo");
+				return null;
+			}
+			else {
+				serverThread = new Thread(server);
+				server.setServerThread(serverThread);
+				System.out.println("Utente NON presente, server buono");
+				return server;
+			}
+		} catch (Exception e) {
+			System.out.println("Errore connessione al DB");
+			e.printStackTrace();
+			return null;
+			}
+		}
+		else{
+			return null;
+		}
+	}
+
+	@Override
+	public boolean logoutRMI(String username) throws RemoteException {
+		
+		boolean esitoOperazione = false;
+		
+		if (new OperazioniLogin().logout(username).equals("true")) {
+			esitoOperazione = true;
+			/*try {
+				registry.unbind(URL);
+			} catch (NotBoundException e) {
+				System.out.println("Impossibile fare unbind");
+				esitoOperazione = false;
+			}*/
+		}
+		
+		return esitoOperazione;
+	}
+}

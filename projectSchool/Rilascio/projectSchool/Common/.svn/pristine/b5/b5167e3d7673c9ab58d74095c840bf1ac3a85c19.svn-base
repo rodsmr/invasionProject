@@ -1,0 +1,19 @@
+package interfacceComunicazione;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+
+public interface ServerAccept extends Remote {
+
+	//search user on DB before create a new user
+	public String verifica(String username) throws RemoteException;
+	
+	//registry new user
+	public String registra(String username, String password) throws RemoteException;
+
+	//login user
+	public Server loginRMI(String username, String password, Client client) throws RemoteException;
+	
+	//logout user
+	public boolean logoutRMI(String username) throws RemoteException;
+}

@@ -1,0 +1,197 @@
+package login;
+
+import interfacceComunicazione.Server;
+import interfacceComunicazione.ServerAccept;
+import interfacceComunicazione.Client;
+
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
+
+import mappa.Mappa;
+import partita.FinestraColori;
+import partita.GestioneComandiPartita;
+import partita.Partita;
+
+public class ClientImpl extends UnicastRemoteObject implements Client {
+
+	private static final long serialVersionUID = 1L;
+	private static final String HOST = "127.0.0.1";
+	private static final String URL = "rmi://"+HOST+"/serverAccept";
+	private Registry registry = null;
+	private ServerAccept stub = null;
+	
+	private GestioneComandiPartita gestionePartita = null;
+	
+	private Partita match = null;
+	
+	private ArrayList<String> statiUtente = null; //contiene il nome di ciascun stato dell'utente
+	
+	private String comando = null;
+	private Mappa mappa = null;
+	private String user = null;
+	private Server server = null;
+	private static String scelta = null;
+	private String colore = null;
+	
+	//Costruttore
+	public ClientImpl() throws RemoteException {
+		gestionePartita = new GestioneComandiPartita();
+		statiUtente = new ArrayList<String>();
+	}
+	
+	public void setUser(String user) {
+		this.user = user;
+		
+		gestionePartita.setIndiceTerritori(statiUtente);
+	}
+	
+	public void start() {
+	
+		System.out.println("-->CLIENT START<--");
+		
+		try {			
+			if (System.getSecurityManager() == null) {
+				System.setSecurityManager(new SecurityManager());
+				System.out.println("-->Creato SecurityManager");
+			}
+			
+			registry = LocateRegistry.getRegistry(HOST);
+			System.out.println("-->Creato registry");
+			
+			stub = (ServerAccept) registry.lookup(URL);
+			System.out.println("-->Creato stub");
+		} catch (RemoteException e) {
+			System.out.println("Creazione nel Client FALLITA");
+			System.out.println("Message Remote: "+e.getMessage());
+			//bisogna decidere cosa fargli fare
+		} catch (NotBoundException e) {
+			System.out.println("Creazione nel Client FALLITA");
+			System.out.println("Message NBE: "+e.getMessage());
+			//bisogna decidere cosa fargli fare
+		}
+	}
+	
+	public ServerAccept getStub() {
+		return stub;
+	}
+
+	@Override
+	public void sayHello(String user) throws RemoteException {
+		// TODO Auto-generated method stub
+		System.out.println("-->HELLO "+user);		
+	}
+
+	@Override
+	public String comandoDaEseguire(String comando) throws RemoteException {
+		System.out.println("ClientImpl, comando -> "+comando);
+		String inizioComando = null;
+		
+		if (comando.startsWith("colore")) {
+			inizioComando = "colore";
+		}
+		else if (comando.startsWith("territorio")) {
+			inizioComando = "territorio";
+		}
+		else if (comando.startsWith("posizionamento")){
+			inizioComando = "posizionamento";
+		}
+		else if (comando.startsWith("aggiorna")) {
+			inizioComando = "aggiorna";
+		}
+		else if (comando.startsWith("turno")) {
+			inizioComando = "turno";
+		}
+		
+		switch (inizioComando) {
+			case "colore": {
+				
+				FinestraColori finestraColori = new FinestraColori(comando.substring(7));
+				finestraColori.setSocket(null);
+				finestraColori.setClientInt(this); //poichè sfrutto il valore di ritorno
+				finestraColori.getFinestraColore().setTitle(user+": scegli il tuo colore");
+				finestraColori.setUsername(user);
+				finestraColori.getFinestraColore().setVisible(true);
+				
+				int val = 0;
+				scelta = "null";
+				
+				while (val == 0) {
+					try {
+						Thread.sleep(1000);
+						if(scelta.compareTo("null")!=0) val = 1;
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				
+				colore = scelta;
+
+				System.out.println("Prima di creare partita");
+				System.out.println("user: "+user);
+				System.out.println("colore: "+colore);
+				
+				match = new Partita(server, user, colore);
+				gestionePartita.setMappa(match.getMappa());
+				gestionePartita.setUsername(user);
+				gestionePartita.setColoreUser(colore);
+				System.out.println("Mappa: "+match.getMappa());
+				//match.eseguiComando();
+				
+				System.out.println("CLIENTIMPL --> colore: "+scelta);
+				
+				break;
+			}
+			case "territorio": {
+				System.out.println(comando);
+				if (gestionePartita.eseguiComando(comando).equals("true")) {
+					scelta = "true";
+				}
+				else {
+					scelta = "false";
+				}
+				//new Mappa(user, colore).coloraMappa(statiUtente); //va qua?
+				System.out.println("- Territorio: scelta: "+scelta);
+				break;
+			}
+			case "posizionamento": {
+				scelta = gestionePartita.eseguiComando(comando);
+				System.out.println("VALORE TORNATO DA POSIZIONAMENTO: "+scelta);
+				break;
+			}
+			case "aggiorna": {
+				scelta = gestionePartita.eseguiComando(comando);
+				System.out.println("VALORE TORNATO DA AGGIORNA: "+scelta);
+				break;
+			}
+			case "turno": {
+				scelta = gestionePartita.eseguiComando(comando);
+				System.out.println("TURNO: "+scelta);
+			}
+		}
+		
+		return scelta;
+		//qua arriva correttamente
+	}
+		
+	@Override
+	public String getComandoDaEseguire() throws RemoteException {
+		return this.comando;
+	}
+
+	public String getScelta() {
+		return scelta;
+	}
+	
+	public void setColore(String colore) {
+		scelta = colore;
+	}
+	
+	public void setServer(Server server) {
+		this.server  = server;		
+	}
+}
